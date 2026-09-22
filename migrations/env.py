@@ -8,6 +8,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# импорт моделей для регистрации в метаданнных
 from models.base import Base
 import models.models
 
@@ -18,8 +19,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# схема с которой alembic сравнивает состояние базы
 target_metadata = Base.metadata
 
+# берем url базы и .env
 config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
 
 

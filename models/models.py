@@ -19,6 +19,7 @@ class ChallengeStatus:
     SKIPPED = "skipped"
 
 
+# профиль пользователя
 class User(Base):
     __tablename__ = "users"
 
@@ -32,6 +33,7 @@ class User(Base):
     challenges: Mapped[list["UserChallenge"]] = relationship(back_populates="user")
 
 
+# афиша событий для подборок
 class Event(Base):
     __tablename__ = "events"
 
@@ -50,6 +52,8 @@ class Event(Base):
     challenges: Mapped[list["UserChallenge"]] = relationship(back_populates="event")
 
 
+# челлендж на неделю
+# юзер + событие и весь его жизненный цикл
 class UserChallenge(Base):
     __tablename__ = "user_challenges"
 
