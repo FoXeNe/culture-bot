@@ -3,7 +3,7 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.models import User, UserChallenge, ChallengeStatus
+from models.models import User, UserChallenge, ChallengeStatus, Event
 
 
 async def get_or_create_user(
