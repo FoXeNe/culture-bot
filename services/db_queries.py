@@ -36,7 +36,17 @@ async def update_user_categories(
 ) -> None:
     """Обновить выбранные пользователем категории."""
 
-    pass
+    result = await session.execute(
+        select(User).where(User.user_id == vk_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        return
+
+    user.categories = ",".join(categories)
+
+    await session.commit()
 
 
 async def get_user_stats(
@@ -46,3 +56,4 @@ async def get_user_stats(
     """Получить статистику пользователя для профиля."""
 
     pass
+
