@@ -1,4 +1,4 @@
-vkbottle>=4.3.0
+maxapi>=1.2.2
 sqlalchemy>=2.0.41
 asyncpg>=0.30.0
 python-dotenv>=1.0.0
