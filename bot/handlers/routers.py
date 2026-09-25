@@ -1,4 +1,5 @@
 from maxapi import Router
 
-# TODO: добавить роутеры из handlers/
-routers: list[Router] = []
+from bot.handlers.start import router as start_router
+
+routers: list[Router] = [start_router]
