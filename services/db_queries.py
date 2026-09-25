@@ -27,6 +27,14 @@ async def update_user_categories(
     user.categories = ",".join(categories)
     await session.commit()
 
+async def update_user_pushkin_card(
+    session: AsyncSession, user_id: int, has_card: bool
+) -> None:
+    result = await session.execute(select(User).where(User.user_id == user_id))
+    user = result.scalar_one()
+    user.pushkin_card = has_card
+    await session.commit()
+
 async def get_user_stats(session: AsyncSession, user_id: int) -> dict:
     result = await session.execute(select(User).where(User.user_id == user_id))
     user = result.scalar_one()
