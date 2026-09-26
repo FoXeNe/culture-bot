@@ -1,0 +1,90 @@
+from maxapi import Bot, F, Router
+from maxapi.types import MessageCallback
+from maxapi.types.attachments.attachment import Attachment, OtherAttachmentPayload
+from maxapi.enums.attachment import AttachmentType
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bot.keyboards.inline import challenge_keyboard
+from models.models import Event
+from services.db_queries import (
+    accept_challenge,
+    create_challenge,
+    get_challenge_for_user,
+    get_week_event_ids,
+    skip_challenge,
+)
+
+router = Router()
+
+# хелперы карточки
+
+MONTHS = [
+    "января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+]
+
+def _card_text(event: Event) -> str:
+    dt = event.event_date
+    date_str = f"{dt.day} {MONTHS[dt.month - 1]}, {dt.strftime('%H:%M')}"
+
+    location = ", ".join(p for p in [date_str, event.venue] if p)
+
+    price_str = None
+    if event.price_from is not None:
+        price_str = "бесплатно" if event.price_from == 0 else f"от {event.price_from} ₽"
+    if event.is_pushkin_card:
+        price_str = f"{price_str} · 🎫 пушкинская карта" if price_str else "🎫 пушкинская карта"
+
+    parts = [event.title, "", location]
+    if price_str:
+        parts.append(price_str)
+    if event.about:
+        parts.extend(["", event.about])
+
+    return "\n".join(parts)
+
+def _card_attachments(event: Event, challenge_id: int) -> list:
+    attachments = []
+    if event.image_url:
+        attachments.append(
+            Attachment(
+                type=AttachmentType.IMAGE,
+                payload=OtherAttachmentPayload(url=event.image_url),
+            )
+        )
+    attachments.append(challenge_keyboard(challenge_id))
+    return attachments
+
+async def send_challenge_card(bot: Bot, user_id: int, event: Event, challenge_id: int) -> None:
+    await bot.send_message(
+        user_id=user_id,
+        text=_card_text(event),
+        attachments=_card_attachments(event, challenge_id),
+    )
+
+# колбэки
+
+@router.message_callback(F.callback.payload.startswith("accept_"))
+async def cb_accept_challenge(event: MessageCallback, session: AsyncSession):
+    challenge_id = int(event.callback.payload.removeprefix("accept_"))
+    await accept_challenge(session, challenge_id)
+    await event.answer(new_text="отлично, напомню за день до события! 🎉")
+
+@router.message_callback(F.callback.payload.startswith("skip_"))
+async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
+    challenge_id = int(event.callback.payload.removeprefix("skip_"))
+    user_id = event.from_user.user_id
+    await skip_challenge(session, challenge_id)
+
+    exclude_ids = await get_week_event_ids(session, user_id)
+    new_event = await get_challenge_for_user(session, user_id, exclude_ids=exclude_ids)
+
+    if new_event is None:
+        await event.answer(new_text="на этой неделе событий по твоим категориям больше нет")
+        return
+
+    new_challenge = await create_challenge(session, user_id, new_event.id)
+    await event.answer(
+        new_text=_card_text(new_event),
+        attachments=_card_attachments(new_event, new_challenge.id),
+    )

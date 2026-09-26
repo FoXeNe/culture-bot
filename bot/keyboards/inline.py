@@ -31,6 +31,14 @@ def continue_keyboard():
     builder.row(CallbackButton(text="Продолжить →", payload="reg_confirm"))
     return builder.as_markup()
 
+def challenge_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="принять", payload=f"accept_{challenge_id}"),
+        CallbackButton(text="отклонить, давай другое", payload=f"skip_{challenge_id}"),
+    )
+    return builder.as_markup()
+
 def confirm_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(
