@@ -5,7 +5,6 @@ from models.models import ChallengeStatus, Event, User, UserChallenge
 
 
 def _week_start(d: date) -> date:
-    # понедельник текущей недели
     return d - timedelta(days=d.weekday())
 
 # юзер
@@ -58,6 +57,18 @@ async def get_user_stats(session: AsyncSession, user_id: int) -> dict:
     }
 
 # ивенты
+
+async def get_week_event_ids(session: AsyncSession, user_id: int) -> list[int]:
+    this_week = _week_start(date.today())
+    result = await session.execute(
+        select(UserChallenge.event_id).where(
+            and_(
+                UserChallenge.user_id == user_id,
+                UserChallenge.week_start == this_week,
+            )
+        )
+    )
+    return list(result.scalars().all())
 
 async def get_challenge_for_user(
     session: AsyncSession, user_id: int, exclude_ids: list[int]
