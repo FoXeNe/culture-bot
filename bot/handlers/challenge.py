@@ -4,12 +4,13 @@ from maxapi.types.attachments.attachment import Attachment, OtherAttachmentPaylo
 from maxapi.enums.attachment import AttachmentType
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.keyboards.inline import challenge_keyboard
+from bot.keyboards.inline import challenge_detail_keyboard, challenge_keyboard
 from models.models import Event
 from services.db_queries import (
     accept_challenge,
     create_challenge,
     get_challenge_for_user,
+    get_event_by_challenge_id,
     get_week_event_ids,
     skip_challenge,
 )
@@ -23,23 +24,39 @@ MONTHS = [
     "июля", "августа", "сентября", "октября", "ноября", "декабря",
 ]
 
+def _price_str(event: Event) -> str | None:
+    price = None
+    if event.price_from is not None:
+        price = "бесплатно" if event.price_from == 0 else f"от {event.price_from} ₽"
+    if event.is_pushkin_card:
+        price = f"{price} · 🎫 пушкинская карта" if price else "🎫 пушкинская карта"
+    return price
+
 def _card_text(event: Event) -> str:
     dt = event.event_date
     date_str = f"{dt.day} {MONTHS[dt.month - 1]}, {dt.strftime('%H:%M')}"
-
     location = ", ".join(p for p in [date_str, event.venue] if p)
 
-    price_str = None
-    if event.price_from is not None:
-        price_str = "бесплатно" if event.price_from == 0 else f"от {event.price_from} ₽"
-    if event.is_pushkin_card:
-        price_str = f"{price_str} · 🎫 пушкинская карта" if price_str else "🎫 пушкинская карта"
+    parts = [event.title, "", location]
+    price = _price_str(event)
+    if price:
+        parts.append(price)
+
+    return "\n".join(parts)
+
+def _detail_text(event: Event) -> str:
+    dt = event.event_date
+    date_str = f"{dt.day} {MONTHS[dt.month - 1]}, {dt.strftime('%H:%M')}"
+    location = ", ".join(p for p in [date_str, event.venue] if p)
 
     parts = [event.title, "", location]
-    if price_str:
-        parts.append(price_str)
+    price = _price_str(event)
+    if price:
+        parts.append(price)
     if event.about:
         parts.extend(["", event.about])
+    if event.ticket_url:
+        parts.extend(["", f"купить билет: {event.ticket_url}"])
 
     return "\n".join(parts)
 
@@ -88,3 +105,25 @@ async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
         new_text=_card_text(new_event),
         attachments=_card_attachments(new_event, new_challenge.id),
     )
+
+@router.message_callback(F.callback.payload.startswith("detail_back_"))
+async def cb_detail_back(event: MessageCallback, session: AsyncSession):
+    challenge_id = int(event.callback.payload.removeprefix("detail_back_"))
+    ev = await get_event_by_challenge_id(session, challenge_id)
+    await event.answer(
+        new_text=_card_text(ev),
+        attachments=_card_attachments(ev, challenge_id),
+    )
+
+@router.message_callback(F.callback.payload.startswith("detail_"))
+async def cb_detail_challenge(event: MessageCallback, session: AsyncSession):
+    challenge_id = int(event.callback.payload.removeprefix("detail_"))
+    ev = await get_event_by_challenge_id(session, challenge_id)
+    await event.answer(
+        new_text=_detail_text(ev),
+        attachments=[challenge_detail_keyboard(challenge_id)],
+    )
+
+@router.message_callback(F.callback.payload == "menu")
+async def cb_menu(event: MessageCallback, session: AsyncSession):
+    await event.ack()

@@ -58,6 +58,14 @@ async def get_user_stats(session: AsyncSession, user_id: int) -> dict:
 
 # ивенты
 
+async def get_event_by_challenge_id(session: AsyncSession, challenge_id: int) -> Event:
+    result = await session.execute(
+        select(UserChallenge).where(UserChallenge.id == challenge_id)
+    )
+    challenge = result.scalar_one()
+    event_result = await session.execute(select(Event).where(Event.id == challenge.event_id))
+    return event_result.scalar_one()
+
 async def get_week_event_ids(session: AsyncSession, user_id: int) -> list[int]:
     this_week = _week_start(date.today())
     result = await session.execute(

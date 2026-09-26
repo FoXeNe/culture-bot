@@ -34,8 +34,19 @@ def continue_keyboard():
 def challenge_keyboard(challenge_id: int):
     builder = InlineKeyboardBuilder()
     builder.row(
-        CallbackButton(text="принять", payload=f"accept_{challenge_id}"),
-        CallbackButton(text="отклонить, давай другое", payload=f"skip_{challenge_id}"),
+        CallbackButton(text="❤️", payload=f"accept_{challenge_id}"),
+        CallbackButton(text="Подробнее", payload=f"detail_{challenge_id}"),
+        CallbackButton(text="👎", payload=f"skip_{challenge_id}"),
+        CallbackButton(text="В меню", payload="menu"),
+    )
+    return builder.as_markup()
+
+def challenge_detail_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="❤️", payload=f"accept_{challenge_id}"),
+        CallbackButton(text="Пропустить", payload=f"skip_{challenge_id}"),
+        CallbackButton(text="Назад", payload=f"detail_back_{challenge_id}"),
     )
     return builder.as_markup()
 
