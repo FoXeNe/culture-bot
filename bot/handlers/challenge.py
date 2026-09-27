@@ -4,7 +4,7 @@ from maxapi.types.attachments.attachment import Attachment, OtherAttachmentPaylo
 from maxapi.enums.attachment import AttachmentType
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.keyboards.inline import challenge_detail_keyboard, challenge_keyboard
+from bot.keyboards.inline import challenge_detail_keyboard, challenge_keyboard, no_more_events_keyboard
 from models.models import Event
 from services.db_queries import (
     accept_challenge,
@@ -60,7 +60,7 @@ def _detail_text(event: Event) -> str:
 
     return "\n".join(parts)
 
-def _card_attachments(event: Event, challenge_id: int) -> list:
+def _card_attachments(event: Event, challenge_id: int, prev_id: int | None = None) -> list:
     attachments = []
     if event.image_url:
         attachments.append(
@@ -69,7 +69,7 @@ def _card_attachments(event: Event, challenge_id: int) -> list:
                 payload=OtherAttachmentPayload(url=event.image_url),
             )
         )
-    attachments.append(challenge_keyboard(challenge_id))
+    attachments.append(challenge_keyboard(challenge_id, prev_id))
     return attachments
 
 async def send_challenge_card(bot: Bot, user_id: int, event: Event, challenge_id: int) -> None:
@@ -97,13 +97,25 @@ async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
     new_event = await get_challenge_for_user(session, user_id, exclude_ids=exclude_ids)
 
     if new_event is None:
-        await event.answer(new_text="на этой неделе событий по твоим категориям больше нет")
+        await event.answer(
+            new_text="на этой неделе событий по твоим категориям больше нет",
+            attachments=[no_more_events_keyboard(challenge_id)],
+        )
         return
 
     new_challenge = await create_challenge(session, user_id, new_event.id)
     await event.answer(
         new_text=_card_text(new_event),
-        attachments=_card_attachments(new_event, new_challenge.id),
+        attachments=_card_attachments(new_event, new_challenge.id, prev_id=challenge_id),
+    )
+
+@router.message_callback(F.callback.payload.startswith("prev_"))
+async def cb_prev_challenge(event: MessageCallback, session: AsyncSession):
+    challenge_id = int(event.callback.payload.removeprefix("prev_"))
+    ev = await get_event_by_challenge_id(session, challenge_id)
+    await event.answer(
+        new_text=_card_text(ev),
+        attachments=_card_attachments(ev, challenge_id),
     )
 
 @router.message_callback(F.callback.payload.startswith("detail_back_"))
