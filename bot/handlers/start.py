@@ -83,36 +83,3 @@ async def toggle_category(event: MessageCallback, session: AsyncSession):
         new_text=CATEGORIES_TEXT,
         attachments=[categories_keyboard(selected)]
     )
-
-# TODO удалить перед релизом
-@router.message_created(Command("test_reminder"))
-async def cmd_test_reminder(event: MessageCreated, session: AsyncSession):
-    from bot.handlers.challenge import _reminder_text
-    from bot.keyboards.inline import reminder_keyboard
-    from services.db_queries import get_latest_user_challenge
-    ch = await get_latest_user_challenge(session, event.from_user.user_id)
-    if ch is None:
-        await event.message.answer(text="нет challenge")
-        return
-    await event.message.answer(text=_reminder_text(ch.event), attachments=[reminder_keyboard(ch.id)])
-
-@router.message_created(Command("test_post_event"))
-async def cmd_test_post_event(event: MessageCreated, session: AsyncSession):
-    from bot.keyboards.inline import post_event_keyboard
-    from services.db_queries import get_latest_user_challenge
-    ch = await get_latest_user_challenge(session, event.from_user.user_id)
-    if ch is None:
-        await event.message.answer(text="нет challenge")
-        return
-    await event.message.answer(
-        text=f"ну как, получилось посетить {ch.event.title}?",
-        attachments=[post_event_keyboard(ch.id)],
-    )
-
-@router.message_created(Command("test_friday"))
-async def cmd_test_friday(event: MessageCreated, session: AsyncSession):
-    from bot.keyboards.inline import friday_keyboard
-    await event.message.answer(
-        text="осталось всего два дня чтобы продлить стрик!\n\nхочешь, подскажу интересные мероприятия на выходные?",
-        attachments=[friday_keyboard()],
-    )
