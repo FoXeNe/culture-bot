@@ -124,6 +124,3 @@ async def cb_detail_challenge(event: MessageCallback, session: AsyncSession):
         attachments=[challenge_detail_keyboard(challenge_id)],
     )
 
-@router.message_callback(F.callback.payload == "menu")
-async def cb_menu(event: MessageCallback, session: AsyncSession):
-    await event.ack()
