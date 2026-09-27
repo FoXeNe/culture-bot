@@ -52,6 +52,69 @@ def challenge_detail_keyboard(challenge_id: int):
     )
     return builder.as_markup()
 
+def reminder_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Спасибо", payload=f"remind_ok_{challenge_id}"),
+        CallbackButton(text="Я не смогу пойти", payload=f"remind_miss_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def reminder_miss_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Перейти к подборке", payload="menu_to_catalog"),
+        CallbackButton(text="В меню", payload="menu"),
+        CallbackButton(text="Назад", payload=f"remind_back_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def post_event_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Да", payload=f"visited_{challenge_id}"),
+        CallbackButton(text="Не получилось прийти", payload=f"missed_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def post_event_miss_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Перейти к подборке", payload="menu_to_catalog"),
+        CallbackButton(text="В меню", payload="menu"),
+        CallbackButton(text="Назад", payload=f"post_back_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def rating_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="*", payload=f"rate_1_{challenge_id}"),
+        CallbackButton(text="**", payload=f"rate_2_{challenge_id}"),
+        CallbackButton(text="***", payload=f"rate_3_{challenge_id}"),
+        CallbackButton(text="****", payload=f"rate_4_{challenge_id}"),
+        CallbackButton(text="*****", payload=f"rate_5_{challenge_id}"),
+        CallbackButton(text="Назад", payload=f"post_back_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def after_rating_keyboard(challenge_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Да", payload="menu_to_catalog"),
+        CallbackButton(text="Нет", payload="menu"),
+        CallbackButton(text="Назад", payload=f"rate_back_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def friday_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Да", payload="menu_to_catalog"),
+        CallbackButton(text="Нет", payload="menu"),
+    )
+    return builder.as_markup()
+
 def no_more_events_keyboard(prev_id: int):
     builder = InlineKeyboardBuilder()
     builder.row(
