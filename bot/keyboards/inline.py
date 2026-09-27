@@ -31,22 +31,32 @@ def continue_keyboard():
     builder.row(CallbackButton(text="Продолжить →", payload="reg_confirm"))
     return builder.as_markup()
 
-def challenge_keyboard(challenge_id: int):
+def challenge_keyboard(challenge_id: int, prev_id: int | None = None):
     builder = InlineKeyboardBuilder()
     builder.row(
         CallbackButton(text="❤️", payload=f"accept_{challenge_id}"),
         CallbackButton(text="Подробнее", payload=f"detail_{challenge_id}"),
-        CallbackButton(text="👎", payload=f"skip_{challenge_id}"),
+        CallbackButton(text="Не мое", payload=f"skip_{challenge_id}"),
         CallbackButton(text="В меню", payload="menu"),
     )
+    if prev_id is not None:
+        builder.row(CallbackButton(text="← назад", payload=f"prev_{prev_id}"))
     return builder.as_markup()
 
 def challenge_detail_keyboard(challenge_id: int):
     builder = InlineKeyboardBuilder()
     builder.row(
         CallbackButton(text="❤️", payload=f"accept_{challenge_id}"),
-        CallbackButton(text="Пропустить", payload=f"skip_{challenge_id}"),
+        CallbackButton(text="Не мое", payload=f"skip_{challenge_id}"),
         CallbackButton(text="Назад", payload=f"detail_back_{challenge_id}"),
+    )
+    return builder.as_markup()
+
+def no_more_events_keyboard(prev_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Назад", payload=f"prev_{prev_id}"),
+        CallbackButton(text="В меню", payload="menu"),
     )
     return builder.as_markup()
 
