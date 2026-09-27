@@ -2,7 +2,7 @@ from maxapi import F, Router
 from maxapi.types import Command, MessageCallback, MessageCreated
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.keyboards.inline import CATEGORIES, categories_keyboard, pushkin_keyboard, welcome_keyboard
+from bot.keyboards.inline import CATEGORIES, categories_keyboard, menu_keyboard, pushkin_keyboard, welcome_keyboard
 from bot.texts.registration import CATEGORIES_START_TEXT, CATEGORIES_TEXT, PUSHKIN_TEXT, WELCOME_TEXT
 from services.db_queries import get_or_create_user, get_user_stats, update_user_categories
 
@@ -10,6 +10,22 @@ router = Router()
 
 def _selected_from_user(user) -> list[str]:
     return [c.strip() for c in user.categories.split(",") if c.strip()] if user.categories else []
+
+@router.message_created(Command("challenge"))
+async def cmd_challenge(event: MessageCreated, session: AsyncSession):
+    from bot.handlers.challenge import send_challenge_card
+    from services.db_queries import create_challenge, get_challenge_for_user, get_or_create_user
+    user_id = event.from_user.user_id
+    user = await get_or_create_user(session, user_id)
+    if user.pushkin_card is None:
+        await event.message.answer(text="сначала пройди регистрацию /start")
+        return
+    ev = await get_challenge_for_user(session, user_id, exclude_ids=[])
+    if ev is None:
+        await event.message.answer(text="событий нет")
+        return
+    challenge = await create_challenge(session, user_id, ev.id)
+    await send_challenge_card(event.message.bot, user_id, ev, challenge.id)
 
 @router.message_created(Command("start"))
 async def cmd_start(event: MessageCreated, session: AsyncSession):
@@ -22,14 +38,8 @@ async def cmd_start(event: MessageCreated, session: AsyncSession):
         # категории выбраны, онбординг не завершён
         await event.message.answer(text=PUSHKIN_TEXT, attachments=[pushkin_keyboard()])
     else:
-        # уже зарегистрирован, показываем профиль
-        stats = await get_user_stats(session, event.from_user.user_id)
-        await event.message.answer(
-            text=f"стрик: {stats['current_streak']} 🔥\n"
-                f"максимум: {stats['max_streak']}\n"
-                f"уровень: {stats['level']}\n"
-                f"заморозки: {stats['freezes_available']}"
-        )
+        # уже зарегистрирован, показываем меню
+        await event.message.answer(text="меню", attachments=[menu_keyboard()])
 
 @router.message_callback(F.callback.payload == "reg_start")
 async def cb_reg_start(event: MessageCallback, session: AsyncSession):
@@ -49,7 +59,11 @@ async def toggle_category(event: MessageCallback, session: AsyncSession):
 
     if payload == "cat_done":
         await update_user_categories(session, user_id, selected)
-        await event.answer(new_text=PUSHKIN_TEXT, attachments=[pushkin_keyboard()])
+        if user.pushkin_card is not None:
+            # уже зарегистрирован, возвращаем в меню
+            await event.answer(new_text="категории обновлены!", attachments=[menu_keyboard()])
+        else:
+            await event.answer(new_text=PUSHKIN_TEXT, attachments=[pushkin_keyboard()])
         return
 
     # убираем cat_

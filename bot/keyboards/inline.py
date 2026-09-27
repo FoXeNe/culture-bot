@@ -50,6 +50,29 @@ def challenge_detail_keyboard(challenge_id: int):
     )
     return builder.as_markup()
 
+def menu_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(CallbackButton(text="Мои мероприятия", payload="menu_events"))
+    builder.row(CallbackButton(text="Изменить категории", payload="menu_categories"))
+    builder.row(CallbackButton(text="Мой стрик", payload="menu_streak"))
+    builder.row(CallbackButton(text="Назад", payload="menu_back"))
+    return builder.as_markup()
+
+def streak_keyboard(has_freeze: bool):
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Перейти к подборке", payload="menu_to_catalog"),
+        CallbackButton(text="В меню", payload="menu"),
+    )
+    if has_freeze:
+        builder.row(CallbackButton(text="Активировать заморозку", payload="freeze_activate"))
+    return builder.as_markup()
+
+def my_events_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(CallbackButton(text="В меню", payload="menu"))
+    return builder.as_markup()
+
 def confirm_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(

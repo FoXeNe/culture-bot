@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from models.models import ChallengeStatus, Event, User, UserChallenge
 
 
@@ -57,6 +58,48 @@ async def get_user_stats(session: AsyncSession, user_id: int) -> dict:
     }
 
 # ивенты
+
+async def get_upcoming_challenges(session: AsyncSession, user_id: int) -> list[UserChallenge]:
+    now = datetime.now(timezone.utc)
+    result = await session.execute(
+        select(UserChallenge)
+        .options(selectinload(UserChallenge.event))
+        .join(Event)
+        .where(
+            and_(
+                UserChallenge.user_id == user_id,
+                UserChallenge.status == ChallengeStatus.ACCEPTED,
+                Event.event_date > now,
+            )
+        )
+        .order_by(Event.event_date)
+    )
+    return list(result.scalars().all())
+
+async def get_current_week_challenge(session: AsyncSession, user_id: int) -> UserChallenge | None:
+    this_week = _week_start(date.today())
+    result = await session.execute(
+        select(UserChallenge)
+        .options(selectinload(UserChallenge.event))
+        .where(
+            and_(
+                UserChallenge.user_id == user_id,
+                UserChallenge.week_start == this_week,
+                UserChallenge.status.in_([ChallengeStatus.OFFERED, ChallengeStatus.ACCEPTED]),
+            )
+        )
+    )
+    return result.scalar_one_or_none()
+
+async def use_freeze(session: AsyncSession, user_id: int) -> bool:
+    # возвращает false если заморозок нет
+    result = await session.execute(select(User).where(User.user_id == user_id))
+    user = result.scalar_one()
+    if user.freezes_available <= 0:
+        return False
+    user.freezes_available -= 1
+    await session.commit()
+    return True
 
 async def get_event_by_challenge_id(session: AsyncSession, challenge_id: int) -> Event:
     result = await session.execute(
