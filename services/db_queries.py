@@ -88,8 +88,9 @@ async def get_current_week_challenge(session: AsyncSession, user_id: int) -> Use
                 UserChallenge.status.in_([ChallengeStatus.OFFERED, ChallengeStatus.ACCEPTED]),
             )
         )
+        .limit(1)
     )
-    return result.scalar_one_or_none()
+    return result.scalars().first()
 
 async def use_freeze(session: AsyncSession, user_id: int) -> bool:
     # возвращает false если заморозок нет
@@ -180,39 +181,43 @@ async def confirm_visit(session: AsyncSession, challenge_id: int) -> User:
         select(UserChallenge).where(UserChallenge.id == challenge_id)
     )
     challenge = result.scalar_one()
-    challenge.status = ChallengeStatus.CONFIRMED
-    challenge.confirmed_at = datetime.now(timezone.utc)
-
     user_result = await session.execute(
         select(User).where(User.user_id == challenge.user_id)
     )
     user = user_result.scalar_one()
+    # идемпотентно: не инкрементим стрик если уже подтверждено
+    if challenge.status == ChallengeStatus.CONFIRMED:
+        return user
+    challenge.status = ChallengeStatus.CONFIRMED
+    challenge.confirmed_at = datetime.now(timezone.utc)
     user.current_streak += 1
     if user.current_streak > user.max_streak:
         user.max_streak = user.current_streak
-
     await session.commit()
     return user
 
 async def miss_visit(session: AsyncSession, challenge_id: int) -> User:
+    # просто помечает как пропущенный, сброс стрика — еженедельный job
     result = await session.execute(
         select(UserChallenge).where(UserChallenge.id == challenge_id)
     )
     challenge = result.scalar_one()
-    challenge.status = ChallengeStatus.MISSED
-
     user_result = await session.execute(
         select(User).where(User.user_id == challenge.user_id)
     )
     user = user_result.scalar_one()
-
-    if user.freezes_available > 0:
-        user.freezes_available -= 1
-    else:
-        user.current_streak = 0
-
+    if challenge.status == ChallengeStatus.MISSED:
+        return user
+    challenge.status = ChallengeStatus.MISSED
     await session.commit()
     return user
+
+async def get_stats_by_challenge(session: AsyncSession, challenge_id: int) -> dict:
+    result = await session.execute(
+        select(UserChallenge.user_id).where(UserChallenge.id == challenge_id)
+    )
+    user_id = result.scalar_one()
+    return await get_user_stats(session, user_id)
 
 async def save_rating(session: AsyncSession, challenge_id: int, rating: int) -> None:
     result = await session.execute(
@@ -240,6 +245,7 @@ async def get_challenges_for_reminder(session: AsyncSession) -> list[UserChallen
     in_24h = now + timedelta(hours=24)
     result = await session.execute(
         select(UserChallenge)
+        .options(selectinload(UserChallenge.event))
         .join(Event)
         .where(
             and_(
@@ -256,6 +262,7 @@ async def get_challenges_for_post_event(session: AsyncSession) -> list[UserChall
     now = datetime.now(timezone.utc)
     result = await session.execute(
         select(UserChallenge)
+        .options(selectinload(UserChallenge.event))
         .join(Event)
         .where(
             and_(
@@ -267,6 +274,51 @@ async def get_challenges_for_post_event(session: AsyncSession) -> list[UserChall
     )
     return list(result.scalars().all())
 
+async def mark_reminder_sent(session: AsyncSession, challenge_id: int) -> None:
+    result = await session.execute(
+        select(UserChallenge).where(UserChallenge.id == challenge_id)
+    )
+    challenge = result.scalar_one()
+    challenge.reminder_sent = True
+    await session.commit()
+
+async def mark_post_event_sent(session: AsyncSession, challenge_id: int) -> None:
+    result = await session.execute(
+        select(UserChallenge).where(UserChallenge.id == challenge_id)
+    )
+    challenge = result.scalar_one()
+    challenge.post_event_sent = True
+    await session.commit()
+
+
+async def get_latest_user_challenge(session: AsyncSession, user_id: int) -> UserChallenge | None:
+    result = await session.execute(
+        select(UserChallenge)
+        .options(selectinload(UserChallenge.event))
+        .where(UserChallenge.user_id == user_id)
+        .order_by(UserChallenge.id.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+async def get_users_for_friday_reminder(session: AsyncSession) -> list[User]:
+    this_week = _week_start(date.today())
+    # зарегистрированные юзеры без принятых ивентов на эту неделю
+    accepted_this_week = select(UserChallenge.user_id).where(
+        and_(
+            UserChallenge.week_start == this_week,
+            UserChallenge.status == ChallengeStatus.ACCEPTED,
+        )
+    )
+    result = await session.execute(
+        select(User).where(
+            and_(
+                User.pushkin_card.isnot(None),
+                User.user_id.not_in(accepted_this_week),
+            )
+        )
+    )
+    return list(result.scalars().all())
 
 async def get_users_for_streak_check(session: AsyncSession) -> list[User]:
     last_week = _week_start(date.today()) - timedelta(weeks=1)
