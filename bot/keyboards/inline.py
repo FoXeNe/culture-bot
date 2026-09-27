@@ -141,8 +141,11 @@ def streak_keyboard(has_freeze: bool):
         builder.row(CallbackButton(text="Активировать заморозку", payload="freeze_activate"))
     return builder.as_markup()
 
-def my_events_keyboard():
+def my_events_keyboard(challenges: list | None = None):
     builder = InlineKeyboardBuilder()
+    if challenges:
+        for ch in challenges:
+            builder.row(CallbackButton(text=f"Отменить: {ch.event.title[:30]}", payload=f"cancel_{ch.id}"))
     builder.row(CallbackButton(text="В меню", payload="menu"))
     return builder.as_markup()
 

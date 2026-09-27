@@ -86,7 +86,7 @@ async def cb_menu_events(event: MessageCallback, session: AsyncSession):
             lines.append(f"{i}. {ev.title} — {date_str}")
         text = "\n".join(lines)
 
-    await event.answer(new_text=text, attachments=[my_events_keyboard()])
+    await event.answer(new_text=text, attachments=[my_events_keyboard(upcoming if upcoming else None)])
 
 @router.message_callback(F.callback.payload == "menu_categories")
 async def cb_menu_categories(event: MessageCallback, session: AsyncSession):

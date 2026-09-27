@@ -9,6 +9,7 @@ from bot.keyboards.inline import (
     challenge_detail_keyboard,
     challenge_keyboard,
     menu_keyboard,
+    my_events_keyboard,
     no_more_events_keyboard,
     post_event_keyboard,
     post_event_miss_keyboard,
@@ -19,11 +20,13 @@ from bot.keyboards.inline import (
 from models.models import Event
 from services.db_queries import (
     accept_challenge,
+    cancel_challenge,
     confirm_visit,
     create_challenge,
     get_challenge_for_user,
     get_event_by_challenge_id,
     get_stats_by_challenge,
+    get_upcoming_challenges,
     get_week_event_ids,
     miss_visit,
     save_rating,
@@ -123,8 +126,24 @@ async def _show_visited_prompt(event: MessageCallback, session: AsyncSession, ch
 @router.message_callback(F.callback.payload.startswith("accept_"))
 async def cb_accept_challenge(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("accept_"))
+    user_id = event.from_user.user_id
     await accept_challenge(session, challenge_id)
-    await event.answer(new_text="отлично, напомню за день до события! 🎉")
+
+    exclude_ids = await get_week_event_ids(session, user_id)
+    next_event = await get_challenge_for_user(session, user_id, exclude_ids=exclude_ids)
+
+    if next_event is None:
+        await event.answer(
+            new_text="отлично, напомню за день до события! 🎉\n\nбольше событий на эту неделю нет",
+            attachments=[menu_keyboard()],
+        )
+        return
+
+    new_challenge = await create_challenge(session, user_id, next_event.id)
+    await event.answer(
+        new_text=f"отлично, напомню за день до события! 🎉\n\nвот ещё одно мероприятие на эту неделю:\n\n{_card_text(next_event)}",
+        attachments=_card_attachments(next_event, new_challenge.id),
+    )
 
 @router.message_callback(F.callback.payload.startswith("skip_"))
 async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
@@ -249,3 +268,14 @@ async def cb_rate(event: MessageCallback, session: AsyncSession):
         "хочешь посмотреть мероприятия на следующую неделю?"
     )
     await event.answer(new_text=text, attachments=[after_rating_keyboard(challenge_id)])
+
+@router.message_callback(F.callback.payload.startswith("cancel_"))
+async def cb_cancel_challenge(event: MessageCallback, session: AsyncSession):
+    challenge_id = int(event.callback.payload.removeprefix("cancel_"))
+    user_id = event.from_user.user_id
+    await cancel_challenge(session, challenge_id)
+    upcoming = await get_upcoming_challenges(session, user_id)
+    await event.answer(
+        new_text="мероприятие отменено",
+        attachments=[my_events_keyboard(upcoming)],
+    )

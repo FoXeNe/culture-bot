@@ -85,7 +85,7 @@ async def get_current_week_challenge(session: AsyncSession, user_id: int) -> Use
             and_(
                 UserChallenge.user_id == user_id,
                 UserChallenge.week_start == this_week,
-                UserChallenge.status.in_([ChallengeStatus.OFFERED, ChallengeStatus.ACCEPTED]),
+                UserChallenge.status == ChallengeStatus.OFFERED,
             )
         )
         .limit(1)
@@ -169,6 +169,14 @@ async def accept_challenge(session: AsyncSession, challenge_id: int) -> None:
     await session.commit()
 
 async def skip_challenge(session: AsyncSession, challenge_id: int) -> None:
+    result = await session.execute(
+        select(UserChallenge).where(UserChallenge.id == challenge_id)
+    )
+    challenge = result.scalar_one()
+    challenge.status = ChallengeStatus.SKIPPED
+    await session.commit()
+
+async def cancel_challenge(session: AsyncSession, challenge_id: int) -> None:
     result = await session.execute(
         select(UserChallenge).where(UserChallenge.id == challenge_id)
     )
