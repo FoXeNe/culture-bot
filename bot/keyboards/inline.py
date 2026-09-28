@@ -1,4 +1,4 @@
-from maxapi.types import CallbackButton
+from maxapi.types import CallbackButton, LinkButton
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 CATEGORIES = ["Выставки и музеи", "Концерты и музыка", "Театр", "Мастер-классы", "Кино", "Экскурсии", "Квесты и квизы", "Другое"]
@@ -31,7 +31,7 @@ def continue_keyboard():
     builder.row(CallbackButton(text="Продолжить →", payload="reg_confirm"))
     return builder.as_markup()
 
-def challenge_keyboard(challenge_id: int, prev_id: int | None = None):
+def challenge_keyboard(challenge_id: int, prev_id: int | None = None, ticket_url: str | None = None):
     builder = InlineKeyboardBuilder()
     builder.row(
         CallbackButton(text="❤️", payload=f"accept_{challenge_id}"),
@@ -39,17 +39,21 @@ def challenge_keyboard(challenge_id: int, prev_id: int | None = None):
         CallbackButton(text="Не мое", payload=f"skip_{challenge_id}"),
         CallbackButton(text="В меню", payload="menu"),
     )
+    if ticket_url:
+        builder.row(LinkButton(text="Купить билет", url=ticket_url))
     if prev_id is not None:
         builder.row(CallbackButton(text="← назад", payload=f"prev_{prev_id}"))
     return builder.as_markup()
 
-def challenge_detail_keyboard(challenge_id: int):
+def challenge_detail_keyboard(challenge_id: int, ticket_url: str | None = None):
     builder = InlineKeyboardBuilder()
     builder.row(
         CallbackButton(text="❤️", payload=f"accept_{challenge_id}"),
         CallbackButton(text="Не мое", payload=f"skip_{challenge_id}"),
         CallbackButton(text="Назад", payload=f"detail_back_{challenge_id}"),
     )
+    if ticket_url:
+        builder.row(LinkButton(text="Купить билет", url=ticket_url))
     return builder.as_markup()
 
 def reminder_keyboard(challenge_id: int):
@@ -146,6 +150,8 @@ def my_events_keyboard(challenges: list | None = None):
     if challenges:
         for ch in challenges:
             builder.row(CallbackButton(text=f"Отменить: {ch.event.title[:30]}", payload=f"cancel_{ch.id}"))
+            if ch.event.ticket_url:
+                builder.row(LinkButton(text=f"Билет: {ch.event.title[:30]}", url=ch.event.ticket_url))
     builder.row(CallbackButton(text="В меню", payload="menu"))
     return builder.as_markup()
 

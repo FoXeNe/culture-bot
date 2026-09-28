@@ -70,8 +70,6 @@ def _detail_text(event: Event) -> str:
         parts.append(price)
     if event.about:
         parts.extend(["", event.about])
-    if event.ticket_url:
-        parts.extend(["", f"купить билет: {event.ticket_url}"])
     return "\n".join(parts)
 
 def _reminder_text(event: Event) -> str:
@@ -97,7 +95,7 @@ def _card_attachments(event: Event, challenge_id: int, prev_id: int | None = Non
                 payload=OtherAttachmentPayload(url=event.image_url),
             )
         )
-    attachments.append(challenge_keyboard(challenge_id, prev_id))
+    attachments.append(challenge_keyboard(challenge_id, prev_id, ticket_url=event.ticket_url))
     return attachments
 
 async def send_challenge_card(bot: Bot, user_id: int, event: Event, challenge_id: int) -> None:
@@ -191,7 +189,7 @@ async def cb_detail_challenge(event: MessageCallback, session: AsyncSession):
     ev = await get_event_by_challenge_id(session, challenge_id)
     await event.answer(
         new_text=_detail_text(ev),
-        attachments=[challenge_detail_keyboard(challenge_id)],
+        attachments=[challenge_detail_keyboard(challenge_id, ticket_url=ev.ticket_url)],
     )
 
 # напоминание
