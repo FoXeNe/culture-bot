@@ -1,4 +1,4 @@
-from maxapi.types import CallbackButton
+from maxapi.types import CallbackButton, RequestGeoLocationButton
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 CATEGORIES = ["Выставки и музеи", "Концерты и музыка", "Театр", "Мастер-классы", "Кино", "Экскурсии", "Квесты и квизы", "Другое"]
@@ -128,6 +128,7 @@ def menu_keyboard():
     builder.row(CallbackButton(text="Мои мероприятия", payload="menu_events"))
     builder.row(CallbackButton(text="Изменить категории", payload="menu_categories"))
     builder.row(CallbackButton(text="Мой стрик", payload="menu_streak"))
+    builder.row(CallbackButton(text="Геолокация", payload="menu_geo"))
     builder.row(CallbackButton(text="Назад", payload="menu_back"))
     return builder.as_markup()
 
@@ -155,4 +156,17 @@ def confirm_keyboard():
         CallbackButton(text="Перейти к подборке", payload="reg_done"),
         CallbackButton(text="Назад", payload="reg_back"),
     )
+    return builder.as_markup()
+
+def geo_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(RequestGeoLocationButton(text="Поделиться геолокацией"))
+    builder.row(CallbackButton(text="Не важно", payload="geo_skip"))
+    return builder.as_markup()
+
+def geo_menu_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(RequestGeoLocationButton(text="Обновить геолокацию"))
+    builder.row(CallbackButton(text="Отказаться от геолокации", payload="geo_remove"))
+    builder.row(CallbackButton(text="В меню", payload="menu"))
     return builder.as_markup()

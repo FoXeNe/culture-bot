@@ -1,7 +1,7 @@
 # модели БД
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -29,6 +29,8 @@ class User(Base):
     freezes_available: Mapped[int] = mapped_column(Integer, default=1)
     categories: Mapped[str | None] = mapped_column(String(255))
     pushkin_card: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     challenges: Mapped[list["UserChallenge"]] = relationship(back_populates="user")
@@ -49,6 +51,8 @@ class Event(Base):
     is_pushkin_card: Mapped[bool] = mapped_column(Boolean, default=False)
     ticket_url: Mapped[str | None] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     challenges: Mapped[list["UserChallenge"]] = relationship(back_populates="event")
 

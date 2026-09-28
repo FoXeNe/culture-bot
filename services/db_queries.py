@@ -1,3 +1,4 @@
+import math
 from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +26,15 @@ async def update_user_categories(
     result = await session.execute(select(User).where(User.user_id == user_id))
     user = result.scalar_one()
     user.categories = ",".join(categories)
+    await session.commit()
+
+async def update_user_geo(
+    session: AsyncSession, user_id: int, lat: float | None, lon: float | None
+) -> None:
+    result = await session.execute(select(User).where(User.user_id == user_id))
+    user = result.scalar_one()
+    user.latitude = lat
+    user.longitude = lon
     await session.commit()
 
 async def update_user_pushkin_card(
@@ -122,6 +132,14 @@ async def get_week_event_ids(session: AsyncSession, user_id: int) -> list[int]:
     )
     return list(result.scalars().all())
 
+def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    # расстояние в км
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    return R * 2 * math.asin(math.sqrt(a))
+
 async def get_challenge_for_user(
     session: AsyncSession, user_id: int, exclude_ids: list[int]
 ) -> Event | None:
@@ -140,9 +158,26 @@ async def get_challenge_for_user(
     if exclude_ids:
         query = query.where(Event.id.not_in(exclude_ids))
 
+    # если у юзера есть гео и у события есть координаты, берем ближайшее
+    if user and user.latitude is not None and user.longitude is not None:
+        result2 = await session.execute(query)
+        events = list(result2.scalars().all())
+        if not events:
+            return None
+        events_with_geo = [e for e in events if e.latitude is not None and e.longitude is not None]
+        events_no_geo = [e for e in events if e.latitude is None or e.longitude is None]
+        if events_with_geo:
+            events_with_geo.sort(
+                key=lambda e: _haversine(user.latitude, user.longitude, e.latitude, e.longitude)
+            )
+            return events_with_geo[0]
+        # нет событий с гео — возвращаем случайное
+        import random
+        return random.choice(events_no_geo)
+
     query = query.order_by(func.random()).limit(1)
-    result = await session.execute(query)
-    return result.scalar_one_or_none()
+    result3 = await session.execute(query)
+    return result3.scalar_one_or_none()
 
 # челленджи
 

@@ -3,8 +3,8 @@ from maxapi.types import MessageCallback
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.start import _selected_from_user
-from bot.keyboards.inline import categories_keyboard, confirm_keyboard, continue_keyboard, pushkin_keyboard
-from bot.texts.registration import CATEGORIES_TEXT, PUSHKIN_IDK_TEXT, PUSHKIN_TEXT, PUSHKIN_YES_TEXT, REG_DONE_TEXT
+from bot.keyboards.inline import categories_keyboard, confirm_keyboard, continue_keyboard, geo_keyboard, pushkin_keyboard
+from bot.texts.registration import CATEGORIES_TEXT, GEO_TEXT, PUSHKIN_IDK_TEXT, PUSHKIN_TEXT, PUSHKIN_YES_TEXT
 from services.db_queries import get_or_create_user, update_user_pushkin_card
 
 router = Router()
@@ -52,7 +52,7 @@ async def cb_reg_confirm(event: MessageCallback, session: AsyncSession):
 
 @router.message_callback(F.callback.payload == "reg_done")
 async def cb_reg_done(event: MessageCallback, session: AsyncSession):
-    await event.answer(new_text=REG_DONE_TEXT)
+    await event.answer(new_text=GEO_TEXT, attachments=[geo_keyboard()])
 
 @router.message_callback(F.callback.payload == "reg_back")
 async def cb_reg_back(event: MessageCallback, session: AsyncSession):
