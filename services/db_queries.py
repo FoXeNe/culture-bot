@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from models.models import ChallengeStatus, Event, User, UserChallenge
@@ -144,7 +144,7 @@ async def get_challenge_for_user(
     return result.scalar_one_or_none()
 
 async def get_event_attendee_count(session: AsyncSession, event_id: int) -> int:
-    # сколько людей приняли этот же ивент
+    # сколько людей приняли этот же ивент (идут туда же)
     result = await session.execute(
         select(func.count(func.distinct(UserChallenge.user_id))).where(
             and_(
@@ -169,6 +169,21 @@ async def create_challenge(
     session.add(challenge)
     await session.commit()
     return challenge
+
+async def reset_week_offers(session: AsyncSession, user_id: int) -> None:
+    # убираем показанные и пролистанные ивенты этой недели, чтобы юзер смог
+    # заново просмотреть всю подборку. принятые не трогаем — они уже в планах
+    this_week = _week_start(date.today())
+    await session.execute(
+        delete(UserChallenge).where(
+            and_(
+                UserChallenge.user_id == user_id,
+                UserChallenge.week_start == this_week,
+                UserChallenge.status.in_([ChallengeStatus.OFFERED, ChallengeStatus.SKIPPED]),
+            )
+        )
+    )
+    await session.commit()
 
 async def accept_challenge(session: AsyncSession, challenge_id: int) -> None:
     result = await session.execute(
