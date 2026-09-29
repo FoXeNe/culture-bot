@@ -381,3 +381,23 @@ async def get_users_for_streak_check(session: AsyncSession) -> list[User]:
         )
     )
     return list(result.scalars().all())
+
+# админ
+
+async def reset_streak(session: AsyncSession, user_id: int) -> None:
+    result = await session.execute(select(User).where(User.user_id == user_id))
+    user = result.scalar_one()
+    user.current_streak = 0
+    await session.commit()
+
+async def reset_user_progress(session: AsyncSession, user_id: int) -> None:
+    await session.execute(delete(UserChallenge).where(UserChallenge.user_id == user_id))
+    result = await session.execute(select(User).where(User.user_id == user_id))
+    user = result.scalar_one_or_none()
+    if user is not None:
+        user.categories = None
+        user.pushkin_card = None
+        user.current_streak = 0
+        user.max_streak = 0
+        user.freezes_available = 1
+    await session.commit()
