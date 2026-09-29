@@ -139,12 +139,13 @@ async def get_challenge_for_user(
     if exclude_ids:
         query = query.where(Event.id.not_in(exclude_ids))
 
-    query = query.order_by(func.random()).limit(1)
+    # от дешевого к дорогому
+    query = query.order_by(Event.price_from.asc(), Event.id.asc()).limit(1)
     result = await session.execute(query)
     return result.scalar_one_or_none()
 
 async def get_event_attendee_count(session: AsyncSession, event_id: int) -> int:
-    # сколько людей приняли этот же ивент (идут туда же)
+    # сколько людей приняли этот же ивент
     result = await session.execute(
         select(func.count(func.distinct(UserChallenge.user_id))).where(
             and_(
