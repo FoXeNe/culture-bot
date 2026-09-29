@@ -26,23 +26,6 @@ async def _send_funnel(bot: Bot, user_id: int, user) -> None:
         # уже зарегистрирован, показываем меню
         await bot.send_message(user_id=user_id, text="Меню", attachments=[menu_keyboard()])
 
-@router.message_created(Command("challenge"))
-async def cmd_challenge(event: MessageCreated, session: AsyncSession):
-    from bot.handlers.challenge import send_challenge_card
-    from services.db_queries import create_challenge, get_challenge_for_user, get_event_attendee_count, get_or_create_user
-    user_id = event.from_user.user_id
-    user = await get_or_create_user(session, user_id)
-    if user.pushkin_card is None:
-        await event.message.answer(text="Сначала пройди регистрацию /start")
-        return
-    ev = await get_challenge_for_user(session, user_id, exclude_ids=[])
-    if ev is None:
-        await event.message.answer(text="Событий нет")
-        return
-    challenge = await create_challenge(session, user_id, ev.id)
-    count = await get_event_attendee_count(session, ev.id)
-    await send_challenge_card(event.message.bot, user_id, ev, challenge.id, count)
-
 @router.bot_started()
 async def on_bot_started(event: BotStarted, session: AsyncSession):
     user = await get_or_create_user(session, event.user.user_id)
@@ -97,7 +80,6 @@ async def toggle_category(event: MessageCallback, session: AsyncSession):
     )
 
 # любой текст прогоняем через воронку, должен быть последним хендлером
-# что бы не перехватывать /start и /challenge
 @router.message_created()
 async def catch_all(event: MessageCreated, session: AsyncSession):
     user = await get_or_create_user(session, event.from_user.user_id)
