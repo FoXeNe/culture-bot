@@ -46,15 +46,15 @@ MONTHS = [
 def _price_str(event: Event) -> str | None:
     price = None
     if event.price_from is not None:
-        price = "бесплатно" if event.price_from == 0 else f"от {event.price_from} ₽"
+        price = "Бесплатно" if event.price_from == 0 else f"От {event.price_from} ₽"
     if event.is_pushkin_card:
-        price = f"{price} · 🎫 пушкинская карта" if price else "🎫 пушкинская карта"
+        price = f"{price} · 🎫 Пушкинская карта" if price else "🎫 Пушкинская карта"
     return price
 
 def _attendee_str(count: int) -> str | None:
     if count <= 0:
         return None
-    return f"👥 на это мероприятие идут ещё {count} чел."
+    return f"👥 На это мероприятие идут ещё {count} чел."
 
 def _card_text(event: Event, attendee_count: int = 0) -> str:
     dt = event.event_date
@@ -88,13 +88,13 @@ def _reminder_text(event: Event) -> str:
     dt = event.event_date
     date_str = f"{dt.day} {MONTHS[dt.month - 1]}, {dt.strftime('%H:%M')}"
     parts = [
-        "напоминаю! завтра у тебя мероприятие:",
+        "Напоминаю! завтра у тебя мероприятие:",
         "",
         event.title,
         event.venue or "",
         date_str,
         "",
-        "не забудь проверить билет и заранее спланировать маршрут. приятного отдыха!",
+        "Не забудь проверить билет и заранее спланировать маршрут. приятного отдыха!",
     ]
     return "\n".join(p for p in parts if p is not None)
 
@@ -123,11 +123,11 @@ async def _show_visited_prompt(event: MessageCallback, session: AsyncSession, ch
     level = stats["level"]
     remaining = (level + 1) * 5 - stats["total_confirmed"]
     text = (
-        f"отлично. тогда засчитываю посещение.\n"
-        f"🔥 твой стрик: {streak}\n"
-        f"осталось ещё {remaining} посещений до нового уровня.\n"
+        f"Отлично. тогда засчитываю посещение.\n"
+        f"🔥 Твой стрик: {streak}\n"
+        f"Осталось ещё {remaining} посещений до нового уровня.\n"
         "\n"
-        "как оценишь мероприятие?"
+        "Как оценишь мероприятие?"
     )
     await event.answer(new_text=text, attachments=[rating_keyboard(challenge_id)])
 
@@ -144,7 +144,7 @@ async def cb_accept_challenge(event: MessageCallback, session: AsyncSession):
 
     if next_event is None:
         await event.answer(
-            new_text="отлично, напомню за день до события! 🎉\n\nбольше событий на эту неделю нет",
+            new_text="Отлично, напомню за день до события! 🎉\n\nБольше событий на эту неделю нет",
             attachments=[menu_keyboard()],
         )
         return
@@ -152,7 +152,7 @@ async def cb_accept_challenge(event: MessageCallback, session: AsyncSession):
     new_challenge = await create_challenge(session, user_id, next_event.id)
     count = await get_event_attendee_count(session, next_event.id)
     await event.answer(
-        new_text=f"Отлично, напомню за день до события! 🎉\n\nвот ещё одно мероприятие на эту неделю:\n\n{_card_text(next_event, count)}",
+        new_text=f"Отлично, напомню за день до события! 🎉\n\nВот ещё одно мероприятие на эту неделю:\n\n{_card_text(next_event, count)}",
         attachments=_card_attachments(next_event, new_challenge.id),
     )
 
@@ -167,7 +167,7 @@ async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
 
     if new_event is None:
         await event.answer(
-            new_text="на этой неделе событий по твоим категориям больше нет",
+            new_text="На этой неделе событий по твоим категориям больше нет",
             attachments=[no_more_events_keyboard(challenge_id)],
         )
         return
@@ -213,7 +213,7 @@ async def cb_detail_challenge(event: MessageCallback, session: AsyncSession):
 
 @router.message_callback(F.callback.payload.startswith("remind_ok_"))
 async def cb_remind_ok(event: MessageCallback, session: AsyncSession):
-    await event.answer(new_text="меню", attachments=[menu_keyboard()])
+    await event.answer(new_text="Меню", attachments=[menu_keyboard()])
 
 @router.message_callback(F.callback.payload.startswith("remind_back_"))
 async def cb_remind_back(event: MessageCallback, session: AsyncSession):
@@ -229,11 +229,11 @@ async def cb_remind_miss(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("remind_miss_"))
     await skip_challenge(session, challenge_id)
     text = (
-        "хорошо, уберу мероприятие из ближайших планов.\n"
+        "Хорошо, уберу мероприятие из ближайших планов.\n"
         "\n"
-        "напоминаю, что если ты не посетишь ни одного мероприятия за неделю, твой стрик обнулится!\n"
+        "Напоминаю, что если ты не посетишь ни одного мероприятия за неделю, твой стрик обнулится!\n"
         "\n"
-        "хочешь посмотреть другие мероприятия на неделю?"
+        "Хочешь посмотреть другие мероприятия на неделю?"
     )
     await event.answer(new_text=text, attachments=[reminder_miss_keyboard(challenge_id)])
 
@@ -243,7 +243,7 @@ async def cb_remind_miss(event: MessageCallback, session: AsyncSession):
 async def cb_post_back(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("post_back_"))
     await event.answer(
-        new_text="ну как, получилось посетить мероприятие?",
+        new_text="Ну как, получилось посетить мероприятие?",
         attachments=[post_event_keyboard(challenge_id)],
     )
 
@@ -258,9 +258,9 @@ async def cb_missed(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("missed_"))
     await miss_visit(session, challenge_id)
     text = (
-        "очень жаль. в таком случае мероприятие не зачтется в твоем стрике.\n"
+        "Очень жаль. в таком случае мероприятие не зачтется в твоем стрике.\n"
         "\n"
-        "хочешь посмотреть другие варианты мероприятий?"
+        "Хочешь посмотреть другие варианты мероприятий?"
     )
     await event.answer(new_text=text, attachments=[post_event_miss_keyboard(challenge_id)])
 
@@ -278,9 +278,9 @@ async def cb_rate(event: MessageCallback, session: AsyncSession):
     challenge_id = int(parts[1])
     await save_rating(session, challenge_id, stars)
     text = (
-        "спасибо! буду учитывать твою оценку в следующей подборке!\n"
+        "Спасибо! буду учитывать твою оценку в следующей подборке!\n"
         "\n"
-        "хочешь посмотреть мероприятия на следующую неделю?"
+        "Хочешь посмотреть мероприятия на следующую неделю?"
     )
     await event.answer(new_text=text, attachments=[after_rating_keyboard(challenge_id)])
 
@@ -291,6 +291,6 @@ async def cb_cancel_challenge(event: MessageCallback, session: AsyncSession):
     await cancel_challenge(session, challenge_id)
     upcoming = await get_upcoming_challenges(session, user_id)
     await event.answer(
-        new_text="мероприятие отменено",
+        new_text="Мероприятие отменено",
         attachments=[my_events_keyboard(upcoming)],
     )

@@ -13,7 +13,7 @@ def categories_keyboard(selected: list[str]):
     for cat in CATEGORIES:
         label = f"✔ {cat}" if cat in selected else cat
         builder.row(CallbackButton(text=label, payload=f"cat_{cat}"))
-    builder.row(CallbackButton(text="готово ->", payload="cat_done"))
+    builder.row(CallbackButton(text="Готово ->", payload="cat_done"))
     return builder.as_markup()
 
 def pushkin_keyboard():
@@ -42,7 +42,7 @@ def challenge_keyboard(challenge_id: int, prev_id: int | None = None, ticket_url
     if ticket_url:
         builder.row(LinkButton(text="Купить билет", url=ticket_url))
     if prev_id is not None:
-        builder.row(CallbackButton(text="← назад", payload=f"prev_{prev_id}"))
+        builder.row(CallbackButton(text="← Назад", payload=f"prev_{prev_id}"))
     return builder.as_markup()
 
 def challenge_detail_keyboard(challenge_id: int, ticket_url: str | None = None):

@@ -20,16 +20,16 @@ from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 def admin_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.row(CallbackButton(text="тест напоминание", payload="admin_test_reminder"))
-    builder.row(CallbackButton(text="тест пост-ивент", payload="admin_test_post_event"))
-    builder.row(CallbackButton(text="тест пятница", payload="admin_test_friday"))
+    builder.row(CallbackButton(text="Тест напоминание", payload="admin_test_reminder"))
+    builder.row(CallbackButton(text="Тест пост-ивент", payload="admin_test_post_event"))
+    builder.row(CallbackButton(text="Тест пятница", payload="admin_test_friday"))
     return builder.as_markup()
 
 @router.message_created(Command("admin"))
 async def cmd_admin(event: MessageCreated, session: AsyncSession):
     if not _is_admin(event.from_user.user_id):
         return
-    await event.message.answer(text="админ панель", attachments=[admin_keyboard()])
+    await event.message.answer(text="Админ панель", attachments=[admin_keyboard()])
 
 @router.message_callback(F.callback.payload == "admin_test_reminder")
 async def cb_admin_test_reminder(event: MessageCallback, session: AsyncSession):
@@ -38,7 +38,7 @@ async def cb_admin_test_reminder(event: MessageCallback, session: AsyncSession):
     from bot.handlers.challenge import _reminder_text
     ch = await get_latest_user_challenge(session, event.from_user.user_id)
     if ch is None:
-        await event.answer(new_text="нет челленджа, сначала /challenge и прими мероприятие")
+        await event.answer(new_text="Нет челленджа, сначала /challenge и прими мероприятие")
         return
     await event.answer(new_text=_reminder_text(ch.event), attachments=[reminder_keyboard(ch.id)])
 
@@ -48,10 +48,10 @@ async def cb_admin_test_post_event(event: MessageCallback, session: AsyncSession
         return
     ch = await get_latest_user_challenge(session, event.from_user.user_id)
     if ch is None:
-        await event.answer(new_text="нет челленджа, сначала /challenge и прими мероприятие")
+        await event.answer(new_text="Нет челленджа, сначала /challenge и прими мероприятие")
         return
     await event.answer(
-        new_text=f"ну как, получилось посетить {ch.event.title}?",
+        new_text=f"Ну как, получилось посетить {ch.event.title}?",
         attachments=[post_event_keyboard(ch.id)],
     )
 
@@ -60,6 +60,6 @@ async def cb_admin_test_friday(event: MessageCallback, session: AsyncSession):
     if not _is_admin(event.from_user.user_id):
         return
     await event.answer(
-        new_text="осталось всего два дня чтобы продлить стрик!\n\nхочешь, подскажу интересные мероприятия на выходные?",
+        new_text="Осталось всего два дня чтобы продлить стрик!\n\nХочешь, подскажу интересные мероприятия на выходные?",
         attachments=[friday_keyboard()],
     )

@@ -24,7 +24,7 @@ async def _send_funnel(bot: Bot, user_id: int, user) -> None:
         await bot.send_message(user_id=user_id, text=PUSHKIN_TEXT, attachments=[pushkin_keyboard()])
     else:
         # уже зарегистрирован, показываем меню
-        await bot.send_message(user_id=user_id, text="меню", attachments=[menu_keyboard()])
+        await bot.send_message(user_id=user_id, text="Меню", attachments=[menu_keyboard()])
 
 @router.message_created(Command("challenge"))
 async def cmd_challenge(event: MessageCreated, session: AsyncSession):
@@ -33,11 +33,11 @@ async def cmd_challenge(event: MessageCreated, session: AsyncSession):
     user_id = event.from_user.user_id
     user = await get_or_create_user(session, user_id)
     if user.pushkin_card is None:
-        await event.message.answer(text="сначала пройди регистрацию /start")
+        await event.message.answer(text="Сначала пройди регистрацию /start")
         return
     ev = await get_challenge_for_user(session, user_id, exclude_ids=[])
     if ev is None:
-        await event.message.answer(text="событий нет")
+        await event.message.answer(text="Событий нет")
         return
     challenge = await create_challenge(session, user_id, ev.id)
     count = await get_event_attendee_count(session, ev.id)
@@ -73,7 +73,7 @@ async def toggle_category(event: MessageCallback, session: AsyncSession):
         await update_user_categories(session, user_id, selected)
         if user.pushkin_card is not None:
             # уже зарегистрирован, возвращаем в меню
-            await event.answer(new_text="категории обновлены!", attachments=[menu_keyboard()])
+            await event.answer(new_text="Категории обновлены!", attachments=[menu_keyboard()])
         else:
             await event.answer(new_text=PUSHKIN_TEXT, attachments=[pushkin_keyboard()])
         return
