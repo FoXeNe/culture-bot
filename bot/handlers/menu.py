@@ -11,11 +11,15 @@ from bot.keyboards.inline import (
 )
 from bot.texts.registration import CATEGORIES_TEXT
 from services.db_queries import (
+    create_challenge,
+    get_challenge_for_user,
     get_current_week_challenge,
     get_event_attendee_count,
     get_or_create_user,
     get_upcoming_challenges,
     get_user_stats,
+    get_week_event_ids,
+    reset_week_offers,
     use_freeze,
 )
 
@@ -39,13 +43,31 @@ async def _show_catalog(event: MessageCallback, session: AsyncSession, user_id: 
         attachments=_card_attachments(ev, challenge.id),
     )
 
+# сбрасывает пролистанные ивенты недели и показывает подборку заново с начала
+async def _show_weekly(event: MessageCallback, session: AsyncSession, user_id: int) -> None:
+    await reset_week_offers(session, user_id)
+    exclude_ids = await get_week_event_ids(session, user_id)
+    ev = await get_challenge_for_user(session, user_id, exclude_ids=exclude_ids)
+    if ev is None:
+        await event.answer(
+            new_text="на этой неделе событий по твоим категориям больше нет",
+            attachments=[menu_keyboard()],
+        )
+        return
+    challenge = await create_challenge(session, user_id, ev.id)
+    count = await get_event_attendee_count(session, ev.id)
+    await event.answer(
+        new_text=_card_text(ev, count),
+        attachments=_card_attachments(ev, challenge.id),
+    )
+
 @router.message_callback(F.callback.payload == "menu")
 async def cb_menu(event: MessageCallback, session: AsyncSession):
     await event.answer(new_text="меню", attachments=[menu_keyboard()])
 
-@router.message_callback(F.callback.payload == "menu_back")
-async def cb_menu_back(event: MessageCallback, session: AsyncSession):
-    await _show_catalog(event, session, event.from_user.user_id)
+@router.message_callback(F.callback.payload == "menu_weekly")
+async def cb_menu_weekly(event: MessageCallback, session: AsyncSession):
+    await _show_weekly(event, session, event.from_user.user_id)
 
 @router.message_callback(F.callback.payload == "menu_to_catalog")
 async def cb_menu_to_catalog(event: MessageCallback, session: AsyncSession):

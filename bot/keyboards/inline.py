@@ -129,10 +129,10 @@ def no_more_events_keyboard(prev_id: int):
 
 def menu_keyboard():
     builder = InlineKeyboardBuilder()
+    builder.row(CallbackButton(text="Недельная подборка", payload="menu_weekly"))
     builder.row(CallbackButton(text="Мои мероприятия", payload="menu_events"))
     builder.row(CallbackButton(text="Изменить категории", payload="menu_categories"))
     builder.row(CallbackButton(text="Мой стрик", payload="menu_streak"))
-    builder.row(CallbackButton(text="Назад", payload="menu_back"))
     return builder.as_markup()
 
 def streak_keyboard(has_freeze: bool):
