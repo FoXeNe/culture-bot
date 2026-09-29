@@ -331,11 +331,16 @@ async def mark_post_event_sent(session: AsyncSession, challenge_id: int) -> None
     challenge.post_event_sent = True
     await session.commit()
 
-async def get_latest_user_challenge(session: AsyncSession, user_id: int) -> UserChallenge | None:
+async def get_latest_accepted_challenge(session: AsyncSession, user_id: int) -> UserChallenge | None:
     result = await session.execute(
         select(UserChallenge)
         .options(selectinload(UserChallenge.event))
-        .where(UserChallenge.user_id == user_id)
+        .where(
+            and_(
+                UserChallenge.user_id == user_id,
+                UserChallenge.status == ChallengeStatus.ACCEPTED,
+            )
+        )
         .order_by(UserChallenge.id.desc())
         .limit(1)
     )

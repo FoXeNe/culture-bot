@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.keyboards.inline import menu_keyboard
 from bot.notifications import send_friday, send_podborka, send_post_event, send_reminder
 from services.db_queries import (
-    get_latest_user_challenge,
+    get_latest_accepted_challenge,
     get_or_create_user,
     reset_streak,
     reset_user_progress,
@@ -56,7 +56,7 @@ async def cb_admin_show_podborka(event: MessageCallback, session: AsyncSession):
 async def cb_admin_test_reminder(event: MessageCallback, session: AsyncSession):
     if not _is_admin(event.from_user.user_id):
         return
-    ch = await get_latest_user_challenge(session, event.from_user.user_id)
+    ch = await get_latest_accepted_challenge(session, event.from_user.user_id)
     if ch is None:
         await event.bot.send_message(user_id=event.from_user.user_id, text="Нет челленджа, сначала покажи подборку и прими мероприятие")
         return
@@ -66,7 +66,7 @@ async def cb_admin_test_reminder(event: MessageCallback, session: AsyncSession):
 async def cb_admin_test_post_event(event: MessageCallback, session: AsyncSession):
     if not _is_admin(event.from_user.user_id):
         return
-    ch = await get_latest_user_challenge(session, event.from_user.user_id)
+    ch = await get_latest_accepted_challenge(session, event.from_user.user_id)
     if ch is None:
         await event.bot.send_message(user_id=event.from_user.user_id, text="Нет челленджа, сначала покажи подборку и прими мероприятие")
         return
