@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from models.models import ChallengeStatus, Event, User, UserChallenge
 
+WEEK_CARD_LIMIT = 10
+
 def _week_start(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
@@ -124,6 +126,10 @@ async def get_week_event_ids(session: AsyncSession, user_id: int) -> list[int]:
 async def get_challenge_for_user(
     session: AsyncSession, user_id: int, exclude_ids: list[int]
 ) -> Event | None:
+    # лимит в 10 карточек
+    if len(exclude_ids) >= WEEK_CARD_LIMIT:
+        return None
+
     result = await session.execute(select(User).where(User.user_id == user_id))
     user = result.scalar_one_or_none()
 
