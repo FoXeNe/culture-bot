@@ -9,6 +9,7 @@ from services.db_queries import (
     get_challenge_for_user,
     get_challenges_for_post_event,
     get_challenges_for_reminder,
+    get_event_attendee_count,
     get_users_for_friday_reminder,
     get_users_for_weekly_challenge,
     mark_post_event_sent,
@@ -26,7 +27,8 @@ async def _weekly_challenge_job(bot: Bot) -> None:
             if event is None:
                 continue
             challenge = await create_challenge(session, user.user_id, event.id)
-            await send_challenge_card(bot, user.user_id, event, challenge.id)
+            count = await get_event_attendee_count(session, event.id)
+            await send_challenge_card(bot, user.user_id, event, challenge.id, count)
 
 # напоминание за сутки до события
 async def _reminder_job(bot: Bot) -> None:

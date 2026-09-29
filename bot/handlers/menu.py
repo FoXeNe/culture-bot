@@ -12,6 +12,7 @@ from bot.keyboards.inline import (
 from bot.texts.registration import CATEGORIES_TEXT
 from services.db_queries import (
     get_current_week_challenge,
+    get_event_attendee_count,
     get_or_create_user,
     get_upcoming_challenges,
     get_user_stats,
@@ -32,8 +33,9 @@ async def _show_catalog(event: MessageCallback, session: AsyncSession, user_id: 
         await event.answer(new_text="подборка придёт в понедельник!")
         return
     ev = challenge.event
+    count = await get_event_attendee_count(session, ev.id)
     await event.answer(
-        new_text=_card_text(ev),
+        new_text=_card_text(ev, count),
         attachments=_card_attachments(ev, challenge.id),
     )
 

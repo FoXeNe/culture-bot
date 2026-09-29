@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from models.models import ChallengeStatus, Event, User, UserChallenge
 
-
 def _week_start(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
@@ -143,6 +142,18 @@ async def get_challenge_for_user(
     query = query.order_by(func.random()).limit(1)
     result = await session.execute(query)
     return result.scalar_one_or_none()
+
+async def get_event_attendee_count(session: AsyncSession, event_id: int) -> int:
+    # сколько людей приняли этот же ивент
+    result = await session.execute(
+        select(func.count(func.distinct(UserChallenge.user_id))).where(
+            and_(
+                UserChallenge.event_id == event_id,
+                UserChallenge.status == ChallengeStatus.ACCEPTED,
+            )
+        )
+    )
+    return result.scalar_one()
 
 # челленджи
 
@@ -297,7 +308,6 @@ async def mark_post_event_sent(session: AsyncSession, challenge_id: int) -> None
     challenge = result.scalar_one()
     challenge.post_event_sent = True
     await session.commit()
-
 
 async def get_latest_user_challenge(session: AsyncSession, user_id: int) -> UserChallenge | None:
     result = await session.execute(
