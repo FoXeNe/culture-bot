@@ -2,6 +2,7 @@ from maxapi import F, Router
 from maxapi.types import MessageCallback
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.assets import STREAK_IMAGE, get_image
 from bot.handlers.challenge import _card_attachments, _card_text
 from bot.keyboards.inline import (
     categories_keyboard,
@@ -43,7 +44,7 @@ async def _show_catalog(event: MessageCallback, session: AsyncSession, user_id: 
         attachments=_card_attachments(ev, challenge.id),
     )
 
-# сбрасывает пролистанные ивенты недели и показывает подборку заново с начала
+# сбрасывает пролистанные ивенты и показывает подборку с начала
 async def _show_weekly(event: MessageCallback, session: AsyncSession, user_id: int) -> None:
     await reset_week_offers(session, user_id)
     exclude_ids = await get_week_event_ids(session, user_id)
@@ -89,9 +90,11 @@ async def cb_menu_streak(event: MessageCallback, session: AsyncSession):
         f"предстоящих мероприятий на этой неделе — {len(upcoming)}\n"
         f"доступных заморозок — {stats['freezes_available']}"
     )
+    kb = streak_keyboard(has_freeze=stats["freezes_available"] > 0)
+    img = await get_image(event.bot, STREAK_IMAGE)
     await event.answer(
         new_text=text,
-        attachments=[streak_keyboard(has_freeze=stats["freezes_available"] > 0)],
+        attachments=[img, kb] if img else [kb],
     )
 
 @router.message_callback(F.callback.payload == "menu_events")
