@@ -100,6 +100,7 @@ async def use_freeze(session: AsyncSession, user_id: int) -> bool:
     if user.freezes_available <= 0:
         return False
     user.freezes_available -= 1
+    user.frozen_week = _week_start(date.today())
     await session.commit()
     return True
 
@@ -386,6 +387,18 @@ async def get_users_for_streak_check(session: AsyncSession) -> list[User]:
         )
     )
     return list(result.scalars().all())
+
+async def reset_streaks_for_missed(session: AsyncSession) -> int:
+    last_week = _week_start(date.today()) - timedelta(weeks=1)
+    users = await get_users_for_streak_check(session)
+    reset_count = 0
+    for user in users:
+        if user.frozen_week == last_week:
+            continue
+        user.current_streak = 0
+        reset_count += 1
+    await session.commit()
+    return reset_count
 
 # админ
 

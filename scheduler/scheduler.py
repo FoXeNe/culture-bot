@@ -10,9 +10,15 @@ from services.db_queries import (
     get_users_for_weekly_challenge,
     mark_post_event_sent,
     mark_reminder_sent,
+    reset_streaks_for_missed,
 )
 
 scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+
+# сброс стриков за прошлую неделю
+async def _streak_reset_job(bot: Bot) -> None:
+    async with async_session() as session:
+        await reset_streaks_for_missed(session)
 
 # еженедельная рассылка челленджа
 async def _weekly_challenge_job(bot: Bot) -> None:
@@ -45,6 +51,14 @@ async def _friday_reminder_job(bot: Bot) -> None:
             await send_friday(bot, user.user_id)
 
 def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
+    scheduler.add_job(
+        _streak_reset_job,
+        trigger="cron",
+        day_of_week="mon",
+        hour=9,
+        minute=0,
+        args=[bot],
+    )
     scheduler.add_job(
         _weekly_challenge_job,
         trigger="cron",

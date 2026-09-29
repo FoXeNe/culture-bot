@@ -27,6 +27,7 @@ class User(Base):
     current_streak: Mapped[int] = mapped_column(Integer, default=0)
     max_streak: Mapped[int] = mapped_column(Integer, default=0)
     freezes_available: Mapped[int] = mapped_column(Integer, default=1)
+    frozen_week: Mapped[date | None] = mapped_column(Date, nullable=True)
     categories: Mapped[str | None] = mapped_column(String(255))
     pushkin_card: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
