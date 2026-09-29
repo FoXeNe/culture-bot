@@ -35,7 +35,7 @@ MONTHS = [
 async def _show_catalog(event: MessageCallback, session: AsyncSession, user_id: int) -> None:
     challenge = await get_current_week_challenge(session, user_id)
     if challenge is None:
-        await event.answer(new_text="подборка придёт в понедельник!")
+        await event.answer(new_text="Подборка придёт в понедельник!")
         return
     ev = challenge.event
     count = await get_event_attendee_count(session, ev.id)
@@ -51,7 +51,7 @@ async def _show_weekly(event: MessageCallback, session: AsyncSession, user_id: i
     ev = await get_challenge_for_user(session, user_id, exclude_ids=exclude_ids)
     if ev is None:
         await event.answer(
-            new_text="на этой неделе событий по твоим категориям больше нет",
+            new_text="На этой неделе событий по твоим категориям больше нет",
             attachments=[menu_keyboard()],
         )
         return
@@ -64,7 +64,7 @@ async def _show_weekly(event: MessageCallback, session: AsyncSession, user_id: i
 
 @router.message_callback(F.callback.payload == "menu")
 async def cb_menu(event: MessageCallback, session: AsyncSession):
-    await event.answer(new_text="меню", attachments=[menu_keyboard()])
+    await event.answer(new_text="Меню", attachments=[menu_keyboard()])
 
 @router.message_callback(F.callback.payload == "menu_weekly")
 async def cb_menu_weekly(event: MessageCallback, session: AsyncSession):
@@ -82,13 +82,13 @@ async def cb_menu_streak(event: MessageCallback, session: AsyncSession):
 
     streak = stats["current_streak"]
     text = (
-        f"🔥 твой культурный стрик — {streak} мероприятий!\n"
-        f"твой уровень: {stats['level']}\n"
+        f"🔥 Твой культурный стрик — {streak} мероприятий!\n"
+        f"Твой уровень: {stats['level']}\n"
         "\n"
-        "посещай мероприятия каждую неделю и продлей стрик, чтобы зарабатывать уровни\n"
+        "Посещай мероприятия каждую неделю и продлей стрик, чтобы зарабатывать уровни\n"
         "\n"
-        f"предстоящих мероприятий на этой неделе — {len(upcoming)}\n"
-        f"доступных заморозок — {stats['freezes_available']}"
+        f"Предстоящих мероприятий на этой неделе — {len(upcoming)}\n"
+        f"Доступных заморозок — {stats['freezes_available']}"
     )
     kb = streak_keyboard(has_freeze=stats["freezes_available"] > 0)
     img = await get_image(event.bot, STREAK_IMAGE)
@@ -103,7 +103,7 @@ async def cb_menu_events(event: MessageCallback, session: AsyncSession):
     upcoming = await get_upcoming_challenges(session, user_id)
 
     if not upcoming:
-        text = "у тебя пока нет принятых мероприятий"
+        text = "У тебя пока нет принятых мероприятий"
     else:
         lines = []
         for i, ch in enumerate(upcoming, 1):
@@ -127,12 +127,12 @@ async def cb_freeze_activate(event: MessageCallback, session: AsyncSession):
     if ok:
         await event.answer(
             new_text=(
-                "🧊 ты использовал заморозку! теперь твой стрик сохранится, "
+                "🧊 Ты использовал заморозку! теперь твой стрик сохранится, "
                 "даже если на этой неделе ты не посетишь ни одного мероприятия.\n"
                 "\n"
-                "напоминаю, что доступна всего 1 заморозка в месяц."
+                "Напоминаю, что доступна всего 1 заморозка в месяц."
             ),
             attachments=[menu_keyboard()],
         )
     else:
-        await event.answer(new_text="у тебя нет доступных заморозок", attachments=[menu_keyboard()])
+        await event.answer(new_text="У тебя нет доступных заморозок", attachments=[menu_keyboard()])
