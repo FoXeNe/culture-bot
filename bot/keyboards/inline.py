@@ -137,10 +137,7 @@ def menu_keyboard():
 
 def streak_keyboard(has_freeze: bool):
     builder = InlineKeyboardBuilder()
-    builder.row(
-        CallbackButton(text="Перейти к подборке", payload="menu_to_catalog"),
-        CallbackButton(text="В меню", payload="menu"),
-    )
+    builder.row(CallbackButton(text="В меню", payload="menu"))
     if has_freeze:
         builder.row(CallbackButton(text="Активировать заморозку", payload="freeze_activate"))
     return builder.as_markup()
