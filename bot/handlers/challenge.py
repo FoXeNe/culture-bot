@@ -24,6 +24,7 @@ from services.db_queries import (
     confirm_visit,
     create_challenge,
     get_challenge_for_user,
+    get_event_attendee_count,
     get_event_by_challenge_id,
     get_stats_by_challenge,
     get_upcoming_challenges,
@@ -50,7 +51,12 @@ def _price_str(event: Event) -> str | None:
         price = f"{price} · 🎫 пушкинская карта" if price else "🎫 пушкинская карта"
     return price
 
-def _card_text(event: Event) -> str:
+def _attendee_str(count: int) -> str | None:
+    if count <= 0:
+        return None
+    return f"👥 на это мероприятие идут ещё {count} чел."
+
+def _card_text(event: Event, attendee_count: int = 0) -> str:
     dt = event.event_date
     date_str = f"{dt.day} {MONTHS[dt.month - 1]}, {dt.strftime('%H:%M')}"
     location = ", ".join(p for p in [date_str, event.venue] if p)
@@ -58,9 +64,12 @@ def _card_text(event: Event) -> str:
     price = _price_str(event)
     if price:
         parts.append(price)
+    attendees = _attendee_str(attendee_count)
+    if attendees:
+        parts.append(attendees)
     return "\n".join(parts)
 
-def _detail_text(event: Event) -> str:
+def _detail_text(event: Event, attendee_count: int = 0) -> str:
     dt = event.event_date
     date_str = f"{dt.day} {MONTHS[dt.month - 1]}, {dt.strftime('%H:%M')}"
     location = ", ".join(p for p in [date_str, event.venue] if p)
@@ -68,6 +77,9 @@ def _detail_text(event: Event) -> str:
     price = _price_str(event)
     if price:
         parts.append(price)
+    attendees = _attendee_str(attendee_count)
+    if attendees:
+        parts.append(attendees)
     if event.about:
         parts.extend(["", event.about])
     return "\n".join(parts)
@@ -98,10 +110,10 @@ def _card_attachments(event: Event, challenge_id: int, prev_id: int | None = Non
     attachments.append(challenge_keyboard(challenge_id, prev_id, ticket_url=event.ticket_url))
     return attachments
 
-async def send_challenge_card(bot: Bot, user_id: int, event: Event, challenge_id: int) -> None:
+async def send_challenge_card(bot: Bot, user_id: int, event: Event, challenge_id: int, attendee_count: int = 0) -> None:
     await bot.send_message(
         user_id=user_id,
-        text=_card_text(event),
+        text=_card_text(event, attendee_count),
         attachments=_card_attachments(event, challenge_id),
     )
 
@@ -138,8 +150,9 @@ async def cb_accept_challenge(event: MessageCallback, session: AsyncSession):
         return
 
     new_challenge = await create_challenge(session, user_id, next_event.id)
+    count = await get_event_attendee_count(session, next_event.id)
     await event.answer(
-        new_text=f"отлично, напомню за день до события! 🎉\n\nвот ещё одно мероприятие на эту неделю:\n\n{_card_text(next_event)}",
+        new_text=f"Отлично, напомню за день до события! 🎉\n\nвот ещё одно мероприятие на эту неделю:\n\n{_card_text(next_event, count)}",
         attachments=_card_attachments(next_event, new_challenge.id),
     )
 
@@ -160,8 +173,9 @@ async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
         return
 
     new_challenge = await create_challenge(session, user_id, new_event.id)
+    count = await get_event_attendee_count(session, new_event.id)
     await event.answer(
-        new_text=_card_text(new_event),
+        new_text=_card_text(new_event, count),
         attachments=_card_attachments(new_event, new_challenge.id, prev_id=challenge_id),
     )
 
@@ -169,8 +183,9 @@ async def cb_skip_challenge(event: MessageCallback, session: AsyncSession):
 async def cb_prev_challenge(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("prev_"))
     ev = await get_event_by_challenge_id(session, challenge_id)
+    count = await get_event_attendee_count(session, ev.id)
     await event.answer(
-        new_text=_card_text(ev),
+        new_text=_card_text(ev, count),
         attachments=_card_attachments(ev, challenge_id),
     )
 
@@ -178,8 +193,9 @@ async def cb_prev_challenge(event: MessageCallback, session: AsyncSession):
 async def cb_detail_back(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("detail_back_"))
     ev = await get_event_by_challenge_id(session, challenge_id)
+    count = await get_event_attendee_count(session, ev.id)
     await event.answer(
-        new_text=_card_text(ev),
+        new_text=_card_text(ev, count),
         attachments=_card_attachments(ev, challenge_id),
     )
 
@@ -187,8 +203,9 @@ async def cb_detail_back(event: MessageCallback, session: AsyncSession):
 async def cb_detail_challenge(event: MessageCallback, session: AsyncSession):
     challenge_id = int(event.callback.payload.removeprefix("detail_"))
     ev = await get_event_by_challenge_id(session, challenge_id)
+    count = await get_event_attendee_count(session, ev.id)
     await event.answer(
-        new_text=_detail_text(ev),
+        new_text=_detail_text(ev, count),
         attachments=[challenge_detail_keyboard(challenge_id, ticket_url=ev.ticket_url)],
     )
 

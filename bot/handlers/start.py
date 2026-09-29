@@ -14,7 +14,7 @@ def _selected_from_user(user) -> list[str]:
 @router.message_created(Command("challenge"))
 async def cmd_challenge(event: MessageCreated, session: AsyncSession):
     from bot.handlers.challenge import send_challenge_card
-    from services.db_queries import create_challenge, get_challenge_for_user, get_or_create_user
+    from services.db_queries import create_challenge, get_challenge_for_user, get_event_attendee_count, get_or_create_user
     user_id = event.from_user.user_id
     user = await get_or_create_user(session, user_id)
     if user.pushkin_card is None:
@@ -25,7 +25,8 @@ async def cmd_challenge(event: MessageCreated, session: AsyncSession):
         await event.message.answer(text="событий нет")
         return
     challenge = await create_challenge(session, user_id, ev.id)
-    await send_challenge_card(event.message.bot, user_id, ev, challenge.id)
+    count = await get_event_attendee_count(session, ev.id)
+    await send_challenge_card(event.message.bot, user_id, ev, challenge.id, count)
 
 @router.message_created(Command("start"))
 async def cmd_start(event: MessageCreated, session: AsyncSession):
