@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.start import _selected_from_user
 from bot.keyboards.inline import categories_keyboard, confirm_keyboard, continue_keyboard, pushkin_keyboard
+from bot.notifications import send_podborka
 from bot.texts.registration import CATEGORIES_TEXT, PUSHKIN_IDK_TEXT, PUSHKIN_TEXT, PUSHKIN_YES_TEXT, REG_DONE_TEXT
 from services.db_queries import get_or_create_user, update_user_pushkin_card
 
@@ -52,7 +53,9 @@ async def cb_reg_confirm(event: MessageCallback, session: AsyncSession):
 
 @router.message_callback(F.callback.payload == "reg_done")
 async def cb_reg_done(event: MessageCallback, session: AsyncSession):
+    user_id = event.from_user.user_id
     await event.answer(new_text=REG_DONE_TEXT)
+    await send_podborka(event.bot, session, user_id)
 
 @router.message_callback(F.callback.payload == "reg_back")
 async def cb_reg_back(event: MessageCallback, session: AsyncSession):
