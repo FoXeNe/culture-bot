@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.handlers.start import _selected_from_user
 from bot.keyboards.inline import categories_keyboard, confirm_keyboard, continue_keyboard, pushkin_keyboard
 from bot.notifications import send_podborka
-from bot.texts.registration import CATEGORIES_TEXT, PUSHKIN_IDK_TEXT, PUSHKIN_TEXT, PUSHKIN_YES_TEXT, REG_DONE_TEXT
+from bot.texts.registration import CATEGORIES_START_TEXT, PUSHKIN_IDK_TEXT, PUSHKIN_TEXT, PUSHKIN_YES_TEXT, REG_DONE_TEXT
 from services.db_queries import get_or_create_user, update_user_pushkin_card
 
 router = Router()
@@ -44,7 +44,7 @@ async def cb_pushkin_idk(event: MessageCallback, session: AsyncSession):
 async def cb_pushkin_back(event: MessageCallback, session: AsyncSession):
     user = await get_or_create_user(session, event.from_user.user_id)
     selected = _selected_from_user(user)
-    await event.answer(new_text=CATEGORIES_TEXT, attachments=[categories_keyboard(selected)])
+    await event.answer(new_text=CATEGORIES_START_TEXT, attachments=[categories_keyboard(selected)])
 
 @router.message_callback(F.callback.payload == "reg_confirm")
 async def cb_reg_confirm(event: MessageCallback, session: AsyncSession):
