@@ -93,11 +93,11 @@ def post_event_miss_keyboard(challenge_id: int):
 def rating_keyboard(challenge_id: int):
     builder = InlineKeyboardBuilder()
     builder.row(
-        CallbackButton(text="*", payload=f"rate_1_{challenge_id}"),
-        CallbackButton(text="**", payload=f"rate_2_{challenge_id}"),
-        CallbackButton(text="***", payload=f"rate_3_{challenge_id}"),
-        CallbackButton(text="****", payload=f"rate_4_{challenge_id}"),
-        CallbackButton(text="*****", payload=f"rate_5_{challenge_id}"),
+        CallbackButton(text="1⭐️", payload=f"rate_1_{challenge_id}"),
+        CallbackButton(text="2⭐️", payload=f"rate_2_{challenge_id}"),
+        CallbackButton(text="3⭐️", payload=f"rate_3_{challenge_id}"),
+        CallbackButton(text="4⭐️", payload=f"rate_4_{challenge_id}"),
+        CallbackButton(text="5⭐️", payload=f"rate_5_{challenge_id}"),
         CallbackButton(text="Назад", payload=f"post_back_{challenge_id}"),
     )
     return builder.as_markup()
