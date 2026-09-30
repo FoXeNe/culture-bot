@@ -1,7 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from maxapi import Bot
 
-from bot.notifications import send_friday, send_podborka, send_post_event, send_reminder
+from bot.notifications import send_friday, send_monday_push, send_podborka, send_post_event, send_reminder
 from core.database import async_session
 from services.db_queries import (
     get_challenges_for_post_event,
@@ -25,7 +25,7 @@ async def _weekly_challenge_job(bot: Bot) -> None:
     async with async_session() as session:
         users = await get_users_for_weekly_challenge(session)
         for user in users:
-            await send_podborka(bot, session, user.user_id)
+            await send_monday_push(bot, user.user_id)
 
 # напоминание за сутки до события
 async def _reminder_job(bot: Bot) -> None:
