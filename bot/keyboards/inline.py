@@ -3,6 +3,14 @@ from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 CATEGORIES = ["Выставки и музеи", "Концерты и музыка", "Театр", "Мастер-классы", "Кино", "Экскурсии", "Квесты и квизы", "Другое"]
 
+def monday_push_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        CallbackButton(text="Перейти к подборке", payload="menu_weekly"),
+        CallbackButton(text="В меню", payload="menu"),
+    )
+    return builder.as_markup()
+
 def welcome_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(CallbackButton(text="Начать", payload="reg_start"))
