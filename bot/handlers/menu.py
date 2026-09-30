@@ -10,7 +10,7 @@ from bot.keyboards.inline import (
     my_events_keyboard,
     streak_keyboard,
 )
-from bot.texts.registration import CATEGORIES_TEXT
+from bot.texts.registration import CATEGORIES_START_TEXT
 from services.db_queries import (
     create_challenge,
     get_challenge_for_user,
@@ -119,7 +119,7 @@ async def cb_menu_events(event: MessageCallback, session: AsyncSession):
 async def cb_menu_categories(event: MessageCallback, session: AsyncSession):
     user = await get_or_create_user(session, event.from_user.user_id)
     selected = [c.strip() for c in user.categories.split(",") if c.strip()] if user.categories else []
-    await event.answer(new_text=CATEGORIES_TEXT, attachments=[categories_keyboard(selected)])
+    await event.answer(new_text=CATEGORIES_START_TEXT, attachments=[categories_keyboard(selected)])
 
 @router.message_callback(F.callback.payload == "freeze_activate")
 async def cb_freeze_activate(event: MessageCallback, session: AsyncSession):

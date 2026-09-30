@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.assets import WELCOME_IMAGE, get_image
 from bot.keyboards.inline import CATEGORIES, categories_keyboard, menu_keyboard, pushkin_keyboard, welcome_keyboard
-from bot.texts.registration import CATEGORIES_START_TEXT, CATEGORIES_TEXT, PUSHKIN_TEXT, WELCOME_TEXT
+from bot.texts.registration import CATEGORIES_START_TEXT, PUSHKIN_TEXT, WELCOME_TEXT
 from services.db_queries import get_or_create_user, get_user_stats, update_user_categories
 
 router = Router()
@@ -75,7 +75,7 @@ async def toggle_category(event: MessageCallback, session: AsyncSession):
     await session.commit()
 
     await event.answer(
-        new_text=CATEGORIES_TEXT,
+        new_text=CATEGORIES_START_TEXT,
         attachments=[categories_keyboard(selected)]
     )
 
